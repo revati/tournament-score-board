@@ -3,8 +3,9 @@
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
+use App\Tournament;
 
-class CreateUsersTable extends Migration
+class CreateTournamentsTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,12 +14,10 @@ class CreateUsersTable extends Migration
      */
     public function up()
     {
-        Schema::create('users', function (Blueprint $table) {
+        Schema::create('tournaments', function (Blueprint $table) {
             $table->increments('id');
-            $table->string('name');
-            $table->string('email')->unique();
-            $table->string('password');
-            $table->rememberToken();
+            $table->string('title');
+            $table->enum('status', [Tournament::STATUS_PLAYOFF, Tournament::STATUS_PRELIMINARY, Tournament::STATUS_FINISHED]);
             $table->timestamps();
         });
     }
@@ -30,6 +29,6 @@ class CreateUsersTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('users');
+        Schema::dropIfExists('tournaments');
     }
 }

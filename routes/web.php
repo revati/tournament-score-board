@@ -11,6 +11,7 @@
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', 'TournamentsController@index')->name('tournaments.index');
+Route::post('/tournaments/create', 'TournamentsController@create')->name('tournaments.create');
+Route::get('/tournaments/{id}', 'TournamentsController@view')->name('tournaments.view');
+Route::post('/tournaments/nextStep/{id}', 'FakeResultGeneratorController@nextStep')->name('tournaments.nextStep');
