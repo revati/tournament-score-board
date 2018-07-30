@@ -35,14 +35,6 @@ class TournamentLifecycle {
         return $game;
     }
 
-    private function updateTeamScores(Game $game, $teamId, $score)
-    {
-        $teams = $game->division->teams();
-
-        $newScore = $teams->findOrFail($teamId)->pivot->score + $score;
-        $teams->updateExistingPivot($teamId, ['score' => $newScore]);
-    }
-
     private function makePreliminaryTournament($title, $teams)
     {
         $tournament = Tournament::makePreliminary($title);
@@ -75,6 +67,16 @@ class TournamentLifecycle {
         return $this->makePreliminaryGames($tournament, $division, $teams);
     }
 
+    private function makePlayoffGames($tournament, $division, $teams)
+    {
+        $teams
+            ->chunk(2)
+            ->map(function($teams) use ($tournament, $division) {
+                $teams = $teams->values();
+                return Game::make($tournament, $division, $teams[0], $teams[1])->save();
+            });
+    }
+
     private function makePreliminaryGames($tournament, $division, $teams)
     {
         $teams
@@ -86,6 +88,14 @@ class TournamentLifecycle {
                         return Game::make($tournament, $division, $team, $oponent)->save();
                     });
             });
+    }
+
+    private function updateTeamScores(Game $game, $teamId, $score)
+    {
+        $teams = $game->division->teams();
+
+        $newScore = $teams->findOrFail($teamId)->pivot->score + $score;
+        $teams->updateExistingPivot($teamId, ['score' => $newScore]);
     }
 
     private function finishDivision(Division $division)
@@ -102,7 +112,7 @@ class TournamentLifecycle {
         $this->proceedTournament($division->tournament);
     }
 
-    private function proceedTournament(Tournament $tournament)
+    public function proceedTournament(Tournament $tournament)
     {
         $unfinishedDivisionsCount = $tournament
             ->divisions()
@@ -113,9 +123,56 @@ class TournamentLifecycle {
 
         switch($tournament->status) {
             case Tournament::STATUS_PRELIMINARY:
-                dd($tournament);
+                $this->proceedFromPreliminaryStage($tournament);
                 break;
-
+            case Tournament::STATUS_PLAYOFF:
+                $this->proceedFromPlayoffStage($tournament);
+                break;
         }
+    }
+
+    private function proceedFromPreliminaryStage($tournament)
+    {
+        list($firstTeams, $secondTeams) = $tournament
+            ->divisions
+            ->map(function($division) {
+                return $division->winningTeams()->get();
+            });
+
+        $teams = $firstTeams
+            ->reverse()
+            ->zip($secondTeams)
+            ->flatten();
+
+        $tournament->proceedToPlayoff()->save();
+        $division = Division::makePlayoff("Play off 1/4");
+        $tournament->divisions()->save($division);
+        $division->teams()->saveMany($teams);
+        $this->makeGames($tournament, $division, $teams);
+    }
+
+    private function proceedFromPlayoffStage($tournament)
+    {
+        // TODO: Use relationship mapper to map hasMany relationship to hasOne (last division)
+        $teams = $tournament
+            ->divisions()
+            ->orderBy('id', 'desc')
+            ->firstOrFail()
+            ->games
+            ->map
+            ->winningTeam;
+
+        // On winner, no need to proceeed
+        if($teams->count() === 1) {
+            $tournament->finish()->save();
+
+            return;
+        }
+
+        $number = $teams->count()/2;
+        $division = Division::makePlayoff("Play off 1/$number");
+        $tournament->divisions()->save($division);
+        $division->teams()->saveMany($teams);
+        $this->makeGames($tournament, $division, $teams);
     }
 }

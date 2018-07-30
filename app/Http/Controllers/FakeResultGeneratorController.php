@@ -1,8 +1,10 @@
 <?php namespace App\Http\Controllers;
 
 use App\Tournament;
+use App\Division;
 use App\Services\GameResultsGenerator;
 use App\Services\TournamentLifecycle;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class FakeResultGeneratorController
 {
@@ -10,7 +12,7 @@ class FakeResultGeneratorController
     {
         $tournament = Tournament::findOrFail($id);
 
-        $tournament
+        $division = $tournament
             ->divisions()
             ->isPending()
             ->firstOrFail()

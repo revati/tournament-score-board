@@ -24,6 +24,10 @@
         table.division td.pending_game {
             border-color: #1d4dc6;
         }
+
+        .playoff {
+            float: left;
+        }
     </style>
 </head>
 <body>

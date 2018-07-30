@@ -3,7 +3,7 @@
 use Illuminate\Database\Eloquent\Model;
 
 class Tournament extends Model {
-    protected $fillable = ['title', 'preliminary'];
+    protected $fillable = ['title', 'status'];
 
     const STATUS_PRELIMINARY = 'preliminary';
     const STATUS_PLAYOFF = 'playoff';
@@ -15,6 +15,20 @@ class Tournament extends Model {
             'title' => $title,
             'status' => static::STATUS_PRELIMINARY,
         ]);
+    }
+
+    public function proceedToPlayoff()
+    {
+        $this->status = static::STATUS_PLAYOFF;
+
+        return $this;
+    }
+
+    public function finish()
+    {
+        $this->status = static::STATUS_FINISHED;
+
+        return $this;
     }
 
     public function divisions()

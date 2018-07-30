@@ -37,6 +37,23 @@ class Game extends Model {
         return $this->belongsTo(Division::class);
     }
 
+    public function teamA()
+    {
+        return $this->belongsTo(Team::class, 'team_a_id');
+    }
+
+    public function teamB()
+    {
+        return $this->belongsTo(Team::class, 'team_b_id');
+    }
+
+    public function winningTeam()
+    {
+        $key = $this->team_a_score > $this->team_b_score ? "team_a_id" : "team_b_id";
+
+        return $this->belongsTo(Team::class, $key);
+    }
+
     public function isBetween(Team $teamA, Team $teamB)
     {
         return ! $teamA->equals($teamB) && $this->isTeamPlaying($teamA) && $this->isTeamPlaying($teamB);

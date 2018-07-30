@@ -20,6 +20,15 @@ class Division extends Model {
         ]);
     }
 
+    public static function makePlayoff($title)
+    {
+        return new static([
+            'title' => $title,
+            'type' => static::TYPE_PLAYOFF,
+            'status' => static::STATUS_PENDING,
+        ]);
+    }
+
     public function teams()
     {
         return $this->belongsToMany(Team::class)
@@ -27,9 +36,15 @@ class Division extends Model {
             ->orderBy('pivot_score', 'desc');
     }
 
+    public function winningTeams()
+    {
+        // TODO: What to do if equal points count
+        return $this->teams()->limit(4);
+    }
+
     public function games()
     {
-        return $this->hasMany(Game::class);
+        return $this->hasMany(Game::class)->with(['teamA', 'teamB']);
     }
 
     public function tournament()
